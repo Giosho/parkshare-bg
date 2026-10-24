@@ -10,7 +10,14 @@ console.log("==========================================");
 let lastStatus = "";
 
 function checkGarageStatus() {
-    https.get(FIREBASE_URL, (res) => {
+    let scheduled = false;
+    const next = () => {
+        if (scheduled) return;
+        scheduled = true;
+        setTimeout(checkGarageStatus, 500);
+    };
+
+    const req = https.get(FIREBASE_URL, (res) => {
         let data = '';
 
         res.on('data', (chunk) => {
@@ -20,23 +27,28 @@ function checkGarageStatus() {
         res.on('end', () => {
             try {
                 const garage = JSON.parse(data);
-                if (garage && garage.status) {
-                    if (garage.status === "UNLOCK_REQUESTED" && lastStatus !== "UNLOCK_REQUESTED") {
+                if (garage && garage.status && garage.status !== lastStatus) {
+                    if (garage.status === "UNLOCK_REQUESTED") {
                         console.log("\n🔑 [COMMAND] OPEN received! Broadcasting 433MHz RF signal...");
-                        lastStatus = "UNLOCK_REQUESTED";
-                    }
-                    else if (garage.status === "LOCKED" && lastStatus !== "LOCKED") {
+                    } else if (garage.status === "LOCKED") {
                         console.log("\n🔒 [COMMAND] CLOSE received! Stopping RF signal.");
-                        lastStatus = "LOCKED";
+                    } else {
+                        console.log("\n❓ Unknown status: " + garage.status);
                     }
+                    lastStatus = garage.status;
                 }
             } catch (e) {}
+            next();
         });
-
-    }).on("error", (err) => {
-        console.log("Firebase error: " + err.message);
     });
+
+    req.on("error", (err) => {
+        console.log("Firebase error: " + err.message);
+        next();
+    });
+
+    req.setTimeout(3000, () => req.destroy(new Error("timeout")));
 }
 
-// Проверява на всеки 500ms без никакви таймери за самозатваряне
-setInterval(checkGarageStatus, 500);
+// One request at a time, next poll 500ms after the previous one finishes
+checkGarageStatus();
