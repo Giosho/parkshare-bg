@@ -1,119 +1,34 @@
-<!DOCTYPE html>
-<html lang="bg">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ParkShare BG - Шофьорски Панел</title>
-    <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #eceff1; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-        }
-        .card { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 12px; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1); 
-            text-align: center; 
-            max-width: 400px; 
-            width: 100%; 
-        }
-        h1 { font-size: 22px; color: #1a237e; margin-bottom: 5px; }
-        p { color: #555; font-size: 14px; }
-        .status-box { 
-            background: #f5f5f5; 
-            padding: 15px; 
-            border-radius: 8px; 
-            margin: 20px 0; 
-            font-weight: bold; 
-            font-size: 16px; 
-        }
-        .btn-open { 
-            background: #2e7d32; 
-            color: white; 
-            border: none; 
-            padding: 16px 28px; 
-            font-size: 18px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            width: 100%; 
-            font-weight: bold; 
-            transition: background 0.2s; 
-        }
-        .btn-open:hover { background: #1b5e20; }
-        .btn-open:disabled { background: #ccc; cursor: not-allowed; }
-    </style>
-</head>
-<body>
+<div style="text-align: center; margin-top: 50px;">
+    <h2>Garage Control Panel</h2>
+    <br>
+    <!-- Open Button -->
+    <button onclick="sendGarageCommand('UNLOCK_REQUESTED')" style="padding: 15px 30px; font-size: 18px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+        Open Garage
+    </button>
+    
+    <!-- Close Button -->
+    <button onclick="sendGarageCommand('LOCKED')" style="padding: 15px 30px; font-size: 18px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Close Garage
+    </button>
+</div>
 
-    <div class="card">
-        <h1>🚗 ParkShare BG</h1>
-        <p>Активна резервация: <strong>Гараж #01 (София, Лозенец)</strong></p>
-        
-        <div class="status-box">
-            Статус на вратата: <span id="gateStatus" style="color: #c62828;">ЗАКЛЮЧЕНА</span>
-        </div>
+<script>
+  const firebaseURL = "https://parkshare-bg-default-rtdb.europe-west1.firebasedatabase.app/garages/garage_01.json";
 
-        <button class="btn-open" id="openBtn" onclick="openGarage()">🔓 Отвори Гаража</button>
-    </div>
-
-    <!-- Модулно зареждане на Firebase CDN -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        // Твоята реална Firebase конфигурация:
-        const firebaseConfig = {
-            apiKey: "AIzaSyAdLLm3nLOp8METW5U2siZuR0K3TPOcSus",
-            authDomain: "parkshare-bg.firebaseapp.com",
-            databaseURL: "https://parkshare-bg-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "parkshare-bg",
-            storageBucket: "parkshare-bg.firebasestorage.app",
-            messagingSenderId: "472116025504",
-            appId: "1:472116025504:web:b07877747985e2c4c491c5",
-            measurementId: "G-WMQ9NG4NBP"
-        };
-
-        // Инициализиране на Firebase & Realtime Database
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const garageRef = ref(db, "garages/garage_01");
-
-        const statusEl = document.getElementById("gateStatus");
-        const btnEl = document.getElementById("openBtn");
-
-        // Слушане за реални промени в базата
-        onValue(garageRef, (snapshot) => {
-            const data = snapshot.val();
-            if (!data || data.status === "CLOSED") {
-                statusEl.innerText = "ЗАКЛЮЧЕНА";
-                statusEl.style.color = "#c62828";
-                btnEl.disabled = false;
-                btnEl.innerText = "🔓 Отвори Гаража";
-            } else if (data.status === "UNLOCK_REQUESTED") {
-                statusEl.innerText = "ИЗПРАЩАНЕ НА СИГНАЛ...";
-                statusEl.style.color = "#f57c00";
-                btnEl.disabled = true;
-            } else if (data.status === "OPEN") {
-                statusEl.innerText = "ОТВОРЕНА (Преминаване)";
-                statusEl.style.color = "#2e7d32";
-                btnEl.disabled = true;
-                btnEl.innerText = "Вратата е отворена...";
-            }
-        });
-
-        // Функция за кликване на бутона
-        window.openGarage = function() {
-            update(garageRef, {
-                status: "UNLOCK_REQUESTED",
-                requestedAt: new Date().toISOString()
-            });
-        };
-    </script>
-</body>
-</html>
+  function sendGarageCommand(statusValue) {
+    fetch(firebaseURL, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: statusValue })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Command sent successfully:', statusValue);
+    })
+    .catch((error) => {
+      console.error('Error sending command:', error);
+    });
+  }
+</script>
