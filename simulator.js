@@ -21,26 +21,22 @@ function checkGarageStatus() {
             try {
                 const garage = JSON.parse(data);
                 if (garage && garage.status) {
-                    // If Open command is received
                     if (garage.status === "UNLOCK_REQUESTED" && lastStatus !== "UNLOCK_REQUESTED") {
                         console.log("\n🔑 [COMMAND] OPEN received! Broadcasting 433MHz RF signal...");
                         lastStatus = "UNLOCK_REQUESTED";
                     }
-                    // If Close command is received
                     else if (garage.status === "LOCKED" && lastStatus !== "LOCKED") {
                         console.log("\n🔒 [COMMAND] CLOSE received! Stopping RF signal.");
                         lastStatus = "LOCKED";
                     }
                 }
-            } catch (e) {
-                // Ignore parse errors
-            }
+            } catch (e) {}
         });
 
     }).on("error", (err) => {
-        console.log("Firebase connection error: " + err.message);
+        console.log("Firebase error: " + err.message);
     });
 }
 
-// Check Firebase every 500ms for instant reaction
+// Check every 500ms for instant reaction
 setInterval(checkGarageStatus, 500);
