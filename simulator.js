@@ -38,5 +38,5 @@ function checkGarageStatus() {
     });
 }
 
-// Check every 500ms for instant reaction
+// Проверява на всеки 500ms без никакви таймери за самозатваряне
 setInterval(checkGarageStatus, 500);
